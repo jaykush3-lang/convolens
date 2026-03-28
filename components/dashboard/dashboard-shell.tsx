@@ -101,6 +101,10 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
     () => result?.emotion_tags?.[0] || result?.speakers?.[0]?.tone || "Neutral",
     [result]
   );
+  const speakerTotal = useMemo(
+    () => result?.speakers.reduce((sum, speaker) => sum + speaker.message_count, 0) ?? 0,
+    [result]
+  );
 
   const handleAnalyzeText = async () => {
     const text = activeTab === "audio" ? transcriptText : conversationText;
@@ -368,6 +372,16 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                     ))}
                   </div>
 
+                  <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+                    <SentimentDonut score={result.sentiment_score} label={result.sentiment_label} />
+                    <SpeakerContributionChart speakers={result.speakers} total={speakerTotal} />
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <DistributionCard title="Topics Coverage" items={result.key_topics} colorClass="bg-cyan-500" />
+                    <DistributionCard title="Action Focus" items={result.action_items} colorClass="bg-emerald-500" />
+                  </div>
+
                   <section className="rounded-[28px] border border-black/5 bg-white/60 p-5 dark:border-white/10 dark:bg-white/5">
                     <h2 className="text-xl font-semibold">Summary</h2>
                     <p className="mt-3 text-sm leading-7 text-ink/75 dark:text-ink/70">{result.summary}</p>
@@ -409,7 +423,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                     <div className="grid gap-4 lg:grid-cols-3">
                       {result.notable_quotes.map((quote, index) => (
                         <blockquote key={`${quote}-${index}`} className="rounded-[28px] border border-black/5 bg-white/70 p-5 text-sm italic leading-7 dark:border-white/10 dark:bg-white/5">
-                          â€œ{quote}â€
+                          &quot;{quote}&quot;
                         </blockquote>
                       ))}
                     </div>
@@ -475,3 +489,96 @@ function PillSection({ title, items }: { title: string; items: string[] }) {
   );
 }
 
+function SentimentDonut({ score, label }: { score: number; label: AnalysisResult["sentiment_label"] }) {
+  const color =
+    label === "Positive" ? "#10b981" : label === "Negative" ? "#f59e0b" : "#06b6d4";
+
+  return (
+    <section className="rounded-[28px] border border-black/5 bg-white/60 p-5 dark:border-white/10 dark:bg-white/5">
+      <h2 className="text-xl font-semibold">Sentiment Snapshot</h2>
+      <div className="mt-5 flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+        <div
+          className="flex h-40 w-40 items-center justify-center rounded-full"
+          style={{
+            background: `conic-gradient(${color} 0deg ${score * 3.6}deg, rgba(148, 163, 184, 0.18) ${score * 3.6}deg 360deg)`
+          }}
+        >
+          <div className="flex h-28 w-28 flex-col items-center justify-center rounded-full bg-panel text-center dark:bg-slate-950/70">
+            <div className="text-3xl font-bold">{score}</div>
+            <div className="text-xs uppercase tracking-[0.2em] text-ink/55">Score</div>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="text-sm uppercase tracking-[0.18em] text-accent">Overall Mood</div>
+          <div className="text-2xl font-semibold">{label}</div>
+          <p className="max-w-xs text-sm leading-7 text-ink/70 dark:text-ink/70">
+            This visual shows the overall sentiment balance of the conversation on a 0 to 100 scale.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SpeakerContributionChart({
+  speakers,
+  total
+}: {
+  speakers: AnalysisResult["speakers"];
+  total: number;
+}) {
+  return (
+    <section className="rounded-[28px] border border-black/5 bg-white/60 p-5 dark:border-white/10 dark:bg-white/5">
+      <h2 className="text-xl font-semibold">Speaker Share</h2>
+      <div className="mt-5 space-y-4">
+        {speakers.map((speaker, index) => {
+          const percent = total > 0 ? Math.max(8, Math.round((speaker.message_count / total) * 100)) : 10;
+
+          return (
+            <div key={`${speaker.name}-${index}`} className="space-y-2">
+              <div className="flex items-center justify-between gap-4 text-sm">
+                <div className="font-medium">{speaker.name}</div>
+                <div className="text-ink/60">{speaker.message_count} msgs</div>
+              </div>
+              <div className="h-3 rounded-full bg-slate-200/70 dark:bg-slate-800/80">
+                <div className="h-3 rounded-full bg-accent" style={{ width: `${percent}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function DistributionCard({
+  title,
+  items,
+  colorClass
+}: {
+  title: string;
+  items: string[];
+  colorClass: string;
+}) {
+  const total = items.length || 1;
+
+  return (
+    <section className="rounded-[28px] border border-black/5 bg-white/60 p-5 dark:border-white/10 dark:bg-white/5">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <div className="mt-5 space-y-3">
+        {items.map((item, index) => {
+          const width = Math.max(18, Math.round(((total - index) / total) * 100));
+
+          return (
+            <div key={`${item}-${index}`} className="space-y-2">
+              <div className="text-sm text-ink/75 dark:text-ink/70">{item}</div>
+              <div className="h-2 rounded-full bg-slate-200/70 dark:bg-slate-800/80">
+                <div className={cn("h-2 rounded-full", colorClass)} style={{ width: `${width}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
