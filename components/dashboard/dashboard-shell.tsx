@@ -192,6 +192,9 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                 <div className="rounded-2xl bg-accentSoft px-4 py-3 text-sm text-accent dark:bg-accentSoft/35">
                   Free mode is enabled. Text analysis will use a local rule-based engine when paid AI credits are unavailable.
                 </div>
+                <div className="rounded-2xl border border-black/5 bg-white/70 px-4 py-3 text-sm text-ink/70 dark:border-white/10 dark:bg-white/5 dark:text-ink/70">
+                  English + Hindi/Hinglish mixed conversations are supported in free mode for easier everyday use.
+                </div>
                 <textarea
                   value={conversationText}
                   onChange={(event) => setConversationText(event.target.value)}
