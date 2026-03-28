@@ -8,7 +8,10 @@ const displayFont = Space_Grotesk({ subsets: ["latin"], variable: "--font-displa
 
 export const metadata: Metadata = {
   title: "ConvoLens",
-  description: "AI-powered conversation analysis for text and audio."
+  description: "Premium conversation analysis for chats, screenshots, transcripts, and multilingual discussions.",
+  icons: {
+    icon: "/convolens-mark.svg"
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

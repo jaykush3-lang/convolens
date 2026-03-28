@@ -19,6 +19,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { AUDIO_ACCEPT, IMAGE_ACCEPT, SAMPLE_CONVERSATION, SAMPLE_TEMPLATES } from "@/lib/constants";
 import { exportAnalysisPdf } from "@/lib/pdf";
 import { HistoryItem, AnalysisResult } from "@/lib/types";
+import { Brand } from "@/components/ui/brand";
 import { cn, formatDate, clampText } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -140,7 +141,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
     setSelectedImageName(file.name);
 
     const { recognize } = await import("tesseract.js");
-    const ocrResult = await recognize(file, "eng");
+    const ocrResult = await recognize(file, "eng+hin");
     const extracted = ocrResult.data.text.trim();
 
     if (!extracted) {
@@ -157,6 +158,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
         <header className="rounded-[28px] border border-black/5 bg-panel/95 p-5 shadow-glow dark:border-white/10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
+              <Brand />
               <div className="text-sm font-medium uppercase tracking-[0.22em] text-accent">ConvoLens workspace</div>
               <h1 className="mt-2 text-3xl font-bold tracking-tight">Conversation analysis dashboard</h1>
               <p className="mt-2 text-sm text-ink/70 dark:text-ink/70">Signed in as {userEmail}</p>
@@ -220,7 +222,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                     <div>
                       <div className="text-sm font-semibold">Analyze Chat Screenshot</div>
                       <div className="mt-1 text-xs text-ink/60 dark:text-ink/65">
-                        Upload a screenshot of WhatsApp, chat, notes, or a meeting image. ConvoLens will extract the text into the editor.
+                        Upload a screenshot of WhatsApp, chat, notes, or a meeting image. ConvoLens will extract text into the editor with English + Hindi OCR support.
                       </div>
                     </div>
                     <button

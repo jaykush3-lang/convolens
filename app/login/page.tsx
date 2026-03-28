@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import { Brand } from "@/components/ui/brand";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function LoginPage() {
@@ -89,10 +90,13 @@ export default function LoginPage() {
     <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <div className="flex items-center justify-between">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-ink/75 hover:text-ink">
-            <ArrowLeft className="h-4 w-4" />
-            Back to home
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-ink/75 hover:text-ink">
+              <ArrowLeft className="h-4 w-4" />
+              Back to home
+            </Link>
+            <Brand compact />
+          </div>
           <ThemeToggle />
         </div>
 

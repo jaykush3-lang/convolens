@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, AudioLines, FileText, Globe2, Quote, Sparkles } from "lucide-react";
+import { Brand } from "@/components/ui/brand";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const features = [
@@ -37,9 +38,7 @@ export default function LandingPage() {
     <main className="min-h-screen overflow-hidden px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-14">
         <header className="flex flex-wrap items-center justify-between gap-3 rounded-full border border-black/5 bg-white/70 px-5 py-3 backdrop-blur dark:border-white/10 dark:bg-white/5">
-          <Link href="/" className="font-display text-xl font-semibold tracking-tight">
-            ConvoLens
-          </Link>
+          <Brand compact />
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link

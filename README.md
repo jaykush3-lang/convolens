@@ -60,6 +60,26 @@ Fill these in inside `.env.local`:
 5. Update the site URL to your Vercel domain after deploy.
 6. Redeploy.
 
+## Custom domain setup
+
+1. In Vercel, open your project and go to `Settings > Domains`.
+2. Add your custom domain, for example `convolens.yourdomain.com`.
+3. Follow Vercel's DNS instructions at your domain provider.
+4. Once the custom domain is verified, update Supabase `Authentication > URL Configuration`.
+5. Set `Site URL` to:
+   `https://convolens.yourdomain.com`
+6. Add this redirect URL:
+   `https://convolens.yourdomain.com/auth/callback`
+7. Keep your local and Vercel fallback callback URLs too.
+8. Redeploy after the domain is active.
+
+## Branding notes
+
+- Brand asset: `public/convolens-mark.svg`
+- Product name: `ConvoLens`
+- Current live URL: `https://convolens.vercel.app`
+- Recommended next step for a public launch: connect a custom domain before broad sharing
+
 ## Build checks
 
 - `npm run lint`
