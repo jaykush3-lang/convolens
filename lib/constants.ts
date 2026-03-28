@@ -9,6 +9,48 @@ Leo: Yes, I'll have a prototype ready.
 Mina: Done. I'll share the transcripts and updated copy before end of day.
 Ava: Perfect. Let's review impact next Tuesday and decide whether to ship the change broadly.`;
 
+export const SAMPLE_TEMPLATES = [
+  {
+    id: "english-product",
+    label: "English Product",
+    description: "Product planning discussion with clear action items.",
+    text: SAMPLE_CONVERSATION
+  },
+  {
+    id: "hindi-hinglish",
+    label: "Hindi + Hinglish",
+    description: "Mixed Hindi and English conversation for everyday team analysis.",
+    text: `Aman: Client ko onboarding flow samajh nahi aa raha aur second step pe bahut confusion ho raha hai.
+Riya: Haan, especially jab integration permissions maangte hain tab users drop kar rahe hain.
+Aman: Mujhe lag raha hai pehle value dikhani chahiye, baad mein access maangna better rahega.
+Riya: Theek hai, main aaj helper copy update karke bhej deti hoon.
+Aman: Perfect, aur kal tak ek simple prototype bhi ready kar lete hain.
+Riya: Done, main support team se 5 recent tickets bhi collect kar lungi.
+Aman: Great, next review mein decide karenge ki change sab users ke liye launch karna hai ya nahi.`
+  },
+  {
+    id: "support-escalation",
+    label: "Support Case",
+    description: "Customer support exchange with urgency and resolution cues.",
+    text: `Customer: I was charged twice and I still cannot access my account.
+Support Agent: I'm sorry about that. I can see the duplicate charge and the failed access token issue.
+Customer: I need this fixed today because my team is blocked.
+Support Agent: Understood. I'll refund the duplicate payment now and escalate the login issue to engineering.
+Support Agent: I'll email you an update within one hour and confirm once access is restored.
+Customer: Thanks, please make sure this doesn't happen again.`
+  },
+  {
+    id: "manager-feedback",
+    label: "Manager Feedback",
+    description: "Performance feedback conversation with clear takeaways.",
+    text: `Manager: You handled the launch well, especially the stakeholder updates and quick issue triage.
+Employee: Thank you. I felt confident on communication, but I know the reporting deck came together too late.
+Manager: That's the main improvement area. Earlier preparation would reduce last-minute stress for the team.
+Employee: Agreed. I'll create a reporting template before the next launch cycle.
+Manager: Good plan. Let's review that template together on Monday and make it reusable across the team.`
+  }
+] as const;
+
 export const CLAUDE_SYSTEM_PROMPT = `You are ConvoLens, an expert conversation analyst. Analyze the conversation and return ONLY valid JSON with no extra text, markdown, or backticks.
 
 JSON structure:

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import { AUDIO_ACCEPT, SAMPLE_CONVERSATION } from "@/lib/constants";
+import { AUDIO_ACCEPT, SAMPLE_CONVERSATION, SAMPLE_TEMPLATES } from "@/lib/constants";
 import { exportAnalysisPdf } from "@/lib/pdf";
 import { HistoryItem, AnalysisResult } from "@/lib/types";
 import { cn, formatDate, clampText } from "@/lib/utils";
@@ -166,7 +166,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
         </header>
 
         <section className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <div className="space-y-5 rounded-[28px] border border-black/5 bg-panel/95 p-5 dark:border-white/10">
+          <div className="space-y-5 rounded-[28px] border border-black/5 bg-panel/95 p-4 sm:p-5 dark:border-white/10">
             <div className="flex rounded-full bg-panelStrong p-1 dark:bg-white/5">
               {([
                 ["text", "Text/Chat"],
@@ -195,11 +195,27 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                 <div className="rounded-2xl border border-black/5 bg-white/70 px-4 py-3 text-sm text-ink/70 dark:border-white/10 dark:bg-white/5 dark:text-ink/70">
                   English + Hindi/Hinglish mixed conversations are supported in free mode for easier everyday use.
                 </div>
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold text-ink/75 dark:text-ink/70">Quick Templates</div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {SAMPLE_TEMPLATES.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => setConversationText(template.text)}
+                        className="rounded-2xl border border-black/5 bg-white/75 px-4 py-3 text-left transition hover:border-accent hover:bg-accentSoft/70 dark:border-white/10 dark:bg-white/5 dark:hover:bg-accentSoft/20"
+                      >
+                        <div className="text-sm font-semibold">{template.label}</div>
+                        <div className="mt-1 text-xs text-ink/60 dark:text-ink/65">{template.description}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <textarea
                   value={conversationText}
                   onChange={(event) => setConversationText(event.target.value)}
                   placeholder="Paste a conversation, meeting transcript, or customer chat here..."
-                  className="min-h-[400px] w-full rounded-[28px] border border-black/10 bg-white/70 p-4 text-sm outline-none transition focus:border-accent dark:border-white/10 dark:bg-white/5"
+                  className="min-h-[360px] w-full rounded-[28px] border border-black/10 bg-white/70 p-4 text-sm outline-none transition focus:border-accent sm:min-h-[400px] dark:border-white/10 dark:bg-white/5"
                 />
                 <div className="flex items-center justify-between text-sm text-ink/60">
                   <span>{conversationText.length} characters</span>
@@ -208,7 +224,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                     onClick={() => setConversationText(SAMPLE_CONVERSATION)}
                     className="font-semibold text-accent"
                   >
-                    Load Sample
+                    Load Default
                   </button>
                 </div>
                 <button
@@ -342,7 +358,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
             {actionError ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-200">{actionError}</p> : null}
           </div>
 
-          <section className="rounded-[28px] border border-black/5 bg-panel/95 p-5 dark:border-white/10">
+          <section className="rounded-[28px] border border-black/5 bg-panel/95 p-4 sm:p-5 dark:border-white/10">
             <AnimatePresence mode="wait">
               {result ? (
                 <motion.div
