@@ -64,6 +64,9 @@ JSON structure:
   "action_items": ["action 1", "action 2", "action 3", "action 4"],
   "notable_quotes": ["exact quote 1", "exact quote 2", "exact quote 3"],
   "next_steps": "Concrete 2-3 sentence recommendation on what should happen next",
+  "intent_summary": "2-3 sentence explanation of what the speakers actually want beneath the surface",
+  "hidden_concerns": ["concern 1", "concern 2", "concern 3"],
+  "decision_drivers": ["driver 1", "driver 2", "driver 3"],
   "speakers": [
     {
       "name": "Speaker name or Speaker A if unknown",
@@ -72,10 +75,19 @@ JSON structure:
       "key_contribution": "One sentence describing their role in the conversation"
     }
   ],
+  "speaker_intentions": [
+    {
+      "name": "Speaker name",
+      "stated_goal": "What they openly say they want",
+      "likely_intent": "What they likely mean or are trying to achieve beneath the words",
+      "hidden_concern": "Their unspoken fear, pressure, or concern"
+    }
+  ],
   "emotion_tags": ["<pick relevant: Collaborative|Tense|Productive|Conflict|Agreement|Confusion|Resolution|Urgency|Appreciation|Frustration>"],
   "conversation_type": "<Meeting|Conflict|Planning|Feedback|Casual|Negotiation|Support>"
 }`;
 
 export const AUDIO_ACCEPT = ".mp3,.wav,.m4a,.ogg,.webm";
+export const IMAGE_ACCEPT = "image/png,image/jpeg,image/webp";
 export const MAX_DAILY_ANALYSES = 20;
 

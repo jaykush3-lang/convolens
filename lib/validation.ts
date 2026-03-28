@@ -10,12 +10,23 @@ export const analysisSchema = z.object({
   action_items: z.array(z.string()),
   notable_quotes: z.array(z.string()),
   next_steps: z.string(),
+  intent_summary: z.string(),
+  hidden_concerns: z.array(z.string()),
+  decision_drivers: z.array(z.string()),
   speakers: z.array(
     z.object({
       name: z.string(),
       message_count: z.number().int().nonnegative(),
       tone: z.enum(["Assertive", "Collaborative", "Defensive", "Analytical", "Supportive", "Neutral"]),
       key_contribution: z.string()
+    })
+  ),
+  speaker_intentions: z.array(
+    z.object({
+      name: z.string(),
+      stated_goal: z.string(),
+      likely_intent: z.string(),
+      hidden_concern: z.string()
     })
   ),
   emotion_tags: z.array(

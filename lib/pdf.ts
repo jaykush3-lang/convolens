@@ -45,6 +45,9 @@ export function exportAnalysisPdf(result: AnalysisResult) {
   addSection("Negatives", result.negatives);
   addSection("Topics", result.key_topics);
   addSection("Action Items", result.action_items);
+  addSection("Intent Summary", result.intent_summary);
+  addSection("Hidden Concerns", result.hidden_concerns);
+  addSection("Decision Drivers", result.decision_drivers);
   addSection("Notable Quotes", result.notable_quotes);
   addSection("Next Steps", result.next_steps);
 
@@ -73,6 +76,13 @@ export function exportAnalysisPdf(result: AnalysisResult) {
     doc.text(contributionLines, 150, y);
     y += Math.max(8, contributionLines.length * 6);
   });
+
+  addSection(
+    "Speaker Intentions",
+    result.speaker_intentions.map(
+      (speaker) => `${speaker.name}: goal: ${speaker.stated_goal} intent: ${speaker.likely_intent} concern: ${speaker.hidden_concern}`
+    )
+  );
 
   doc.save("convolens-analysis-report.pdf");
 }

@@ -34,6 +34,13 @@ export interface SpeakerAnalysis {
   key_contribution: string;
 }
 
+export interface SpeakerIntentInsight {
+  name: string;
+  stated_goal: string;
+  likely_intent: string;
+  hidden_concern: string;
+}
+
 export interface AnalysisResult {
   summary: string;
   sentiment_score: number;
@@ -44,7 +51,11 @@ export interface AnalysisResult {
   action_items: string[];
   notable_quotes: string[];
   next_steps: string;
+  intent_summary: string;
+  hidden_concerns: string[];
+  decision_drivers: string[];
   speakers: SpeakerAnalysis[];
+  speaker_intentions: SpeakerIntentInsight[];
   emotion_tags: EmotionTag[];
   conversation_type: ConversationType;
 }

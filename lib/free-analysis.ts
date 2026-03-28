@@ -1,4 +1,4 @@
-import { AnalysisResult, ConversationType, EmotionTag, SpeakerAnalysis, ToneLabel } from "@/lib/types";
+import { AnalysisResult, ConversationType, EmotionTag, SpeakerAnalysis, SpeakerIntentInsight, ToneLabel } from "@/lib/types";
 
 const POSITIVE_WORDS = [
   "good",
@@ -174,6 +174,89 @@ function actionItemsFromLines(lines: string[]) {
   ).slice(0, 4);
 }
 
+function inferIntentSummary(text: string, conversationType: ConversationType) {
+  const lower = text.toLowerCase();
+
+  if (/(client|customer|support|ticket)/.test(lower)) {
+    return "The conversation is mainly trying to reduce friction for a user or customer while protecting trust. Beneath the words, the speakers want quick resolution without losing confidence or goodwill.";
+  }
+
+  if (conversationType === "Planning" || /(launch|prototype|deadline|kal tak|next week)/.test(lower)) {
+    return "The speakers are not only discussing tasks, they are trying to lower execution risk and create clarity on ownership. The meaning behind the words is a push for speed without confusion.";
+  }
+
+  if (/(feedback|improve|better|performance)/.test(lower)) {
+    return "This conversation is trying to balance honesty with improvement. Beneath the language, the intent is to correct direction while preserving motivation and trust.";
+  }
+
+  return "The speakers are trying to create alignment, reduce uncertainty, and move toward a practical next step. Beyond the literal wording, the conversation is about gaining clarity and commitment.";
+}
+
+function inferHiddenConcerns(text: string) {
+  const lower = text.toLowerCase();
+  const concerns: string[] = [];
+
+  if (/(drop|abandon|lose|users|customer)/.test(lower)) concerns.push("Loss of users, customer trust, or conversion.");
+  if (/(delay|late|deadline|kal tak|urgent|jaldi)/.test(lower)) concerns.push("Time pressure and fear of missing deadlines.");
+  if (/(confus|unclear|samajh nahi|clear nahi)/.test(lower)) concerns.push("Confusion is blocking decisions or execution.");
+  if (/(permission|access|trust|calendar)/.test(lower)) concerns.push("Requesting trust too early may create resistance.");
+  if (/(cost|budget|price|paise)/.test(lower)) concerns.push("Financial pressure is shaping the discussion.");
+
+  return concerns.length ? unique(concerns).slice(0, 3) : ["The group wants clarity before committing to the next step."];
+}
+
+function inferDecisionDrivers(text: string) {
+  const lower = text.toLowerCase();
+  const drivers: string[] = [];
+
+  if (/(data|metric|rate|number|analysis)/.test(lower)) drivers.push("Data and measurable outcomes.");
+  if (/(customer|support|client|ticket)/.test(lower)) drivers.push("Customer experience and trust.");
+  if (/(today|urgent|deadline|jaldi|kal tak)/.test(lower)) drivers.push("Speed and delivery urgency.");
+  if (/(team|owner|share|review)/.test(lower)) drivers.push("Clear ownership and team coordination.");
+  if (/(risk|wrong|confusion|friction)/.test(lower)) drivers.push("Reducing risk, friction, and uncertainty.");
+
+  return drivers.length ? unique(drivers).slice(0, 4) : ["Momentum, alignment, and practical next steps."];
+}
+
+function inferSpeakerIntentions(lines: string[], speakers: SpeakerAnalysis[]): SpeakerIntentInsight[] {
+  return speakers.map((speaker) => {
+    const relevant = lines.filter((line) => line.toLowerCase().startsWith(`${speaker.name.toLowerCase()}:`));
+    const joined = relevant.join(" ").toLowerCase();
+
+    const statedGoal =
+      /(will|i'll|i will|main|bhej|draft|prepare|review|share|ready)/.test(joined)
+        ? "Wants to move the conversation toward a concrete next action."
+        : /(need|should|chahiye|karna hai)/.test(joined)
+          ? "Wants a specific change or decision to happen."
+          : "Wants alignment on the discussion.";
+
+    const likelyIntent =
+      speaker.tone === "Analytical"
+        ? "Trying to reduce ambiguity and influence the decision using evidence."
+        : speaker.tone === "Assertive"
+          ? "Trying to create momentum, ownership, or urgency."
+          : speaker.tone === "Supportive"
+            ? "Trying to protect trust, morale, or collaboration."
+            : speaker.tone === "Defensive"
+              ? "Trying to avoid blame or push back on a risk."
+              : "Trying to keep the conversation stable and constructive.";
+
+    const hiddenConcern =
+      /(confus|samajh nahi|issue|risk|drop|delay|urgent|jaldi)/.test(joined)
+        ? "Concerned that confusion or risk will hurt the outcome."
+        : /(trust|permission|client|customer|support)/.test(joined)
+          ? "Concerned about user trust and response quality."
+          : "Concerned about keeping the discussion aligned and productive.";
+
+    return {
+      name: speaker.name,
+      stated_goal: statedGoal,
+      likely_intent: likelyIntent,
+      hidden_concern: hiddenConcern
+    };
+  });
+}
+
 export function generateFreeAnalysis(text: string): AnalysisResult {
   const lines = splitLines(text);
   const lower = text.toLowerCase();
@@ -184,6 +267,7 @@ export function generateFreeAnalysis(text: string): AnalysisResult {
   const speakers = buildSpeakerBreakdown(lines);
   const actionItems = actionItemsFromLines(lines);
   const topics = topTopics(text);
+  const conversationType = inferConversationType(text);
   const positiveLines = unique(
     lines.filter((line) => /(agree|thanks|done|perfect|support|clear|review|accha|sahi|badhiya|theek hai)/i.test(line)).slice(0, 3)
   );
@@ -201,10 +285,14 @@ export function generateFreeAnalysis(text: string): AnalysisResult {
     action_items: actionItems.length ? actionItems : ["Review the conversation and define the next owner manually."],
     notable_quotes: lines.slice(0, 3).map((line) => line.replace(/^([^:]{1,40}):\s*/, "")),
     next_steps: "Review the generated action items and confirm the main decisions manually. If you want higher-quality summaries and speaker nuance later, reconnect a paid AI provider.",
+    intent_summary: inferIntentSummary(text, conversationType),
+    hidden_concerns: inferHiddenConcerns(text),
+    decision_drivers: inferDecisionDrivers(text),
     speakers: speakers.length
       ? speakers
       : [{ name: "Speaker A", message_count: lines.length || 1, tone: "Neutral", key_contribution: "Shared the main points of the conversation." }],
+    speaker_intentions: inferSpeakerIntentions(lines, speakers.length ? speakers : [{ name: "Speaker A", message_count: lines.length || 1, tone: "Neutral", key_contribution: "Shared the main points of the conversation." }]),
     emotion_tags: inferEmotionTags(text, positiveHits, negativeHits),
-    conversation_type: inferConversationType(text)
+    conversation_type: conversationType
   };
 }

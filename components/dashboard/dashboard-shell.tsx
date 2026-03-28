@@ -7,6 +7,7 @@ import {
   ChevronRight,
   FileAudio,
   FileText,
+  ImageUp,
   LoaderCircle,
   LogOut,
   Sparkles,
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import { AUDIO_ACCEPT, SAMPLE_CONVERSATION, SAMPLE_TEMPLATES } from "@/lib/constants";
+import { AUDIO_ACCEPT, IMAGE_ACCEPT, SAMPLE_CONVERSATION, SAMPLE_TEMPLATES } from "@/lib/constants";
 import { exportAnalysisPdf } from "@/lib/pdf";
 import { HistoryItem, AnalysisResult } from "@/lib/types";
 import { cn, formatDate, clampText } from "@/lib/utils";
@@ -36,11 +37,13 @@ async function parseJson<T>(response: Response): Promise<T> {
 export function DashboardShell({ userEmail }: { userEmail: string }) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<TabKey>("text");
   const [conversationText, setConversationText] = useState("");
   const [transcriptText, setTranscriptText] = useState("");
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [selectedImageName, setSelectedImageName] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -131,6 +134,23 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
     await transcribeMutation.mutateAsync(file);
   };
 
+  const handleScreenshot = async (file?: File) => {
+    if (!file) return;
+
+    setSelectedImageName(file.name);
+
+    const { recognize } = await import("tesseract.js");
+    const ocrResult = await recognize(file, "eng");
+    const extracted = ocrResult.data.text.trim();
+
+    if (!extracted) {
+      throw new Error("No readable text was found in the screenshot. Try a clearer image.");
+    }
+
+    setConversationText((current) => (current ? `${current}\n\n${extracted}` : extracted));
+    setActiveTab("text");
+  };
+
   return (
     <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -194,6 +214,40 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                 </div>
                 <div className="rounded-2xl border border-black/5 bg-white/70 px-4 py-3 text-sm text-ink/70 dark:border-white/10 dark:bg-white/5 dark:text-ink/70">
                   English + Hindi/Hinglish mixed conversations are supported in free mode for easier everyday use.
+                </div>
+                <div className="rounded-2xl border border-black/5 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">Analyze Chat Screenshot</div>
+                      <div className="mt-1 text-xs text-ink/60 dark:text-ink/65">
+                        Upload a screenshot of WhatsApp, chat, notes, or a meeting image. ConvoLens will extract the text into the editor.
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-semibold transition hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+                    >
+                      <ImageUp className="h-4 w-4" />
+                      Upload Screenshot
+                    </button>
+                  </div>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept={IMAGE_ACCEPT}
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        await handleScreenshot(file);
+                      } catch (error) {
+                        alert(error instanceof Error ? error.message : "Unable to read this screenshot.");
+                      }
+                    }}
+                  />
+                  {selectedImageName ? <div className="mt-3 text-xs text-ink/60 dark:text-ink/65">Screenshot loaded: {selectedImageName}</div> : null}
                 </div>
                 <div className="space-y-3">
                   <div className="text-sm font-semibold text-ink/75 dark:text-ink/70">Quick Templates</div>
@@ -407,6 +461,14 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                   </section>
 
                   <div className="grid gap-4 lg:grid-cols-2">
+                    <NarrativeCard title="Intent Behind The Words" body={result.intent_summary} />
+                    <IntentDriversCard
+                      concerns={result.hidden_concerns}
+                      drivers={result.decision_drivers}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
                     <InfoList title="Positives" items={result.positives} accent="good" />
                     <InfoList title="Negatives" items={result.negatives} accent="warn" />
                   </div>
@@ -432,6 +494,23 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                           </div>
                           <div className="mt-4 text-sm text-ink/70">{speaker.message_count} messages</div>
                           <p className="mt-3 text-sm leading-6 text-ink/75 dark:text-ink/70">{speaker.key_contribution}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <h2 className="text-xl font-semibold">Speaker Intentions</h2>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      {result.speaker_intentions.map((speaker, index) => (
+                        <div key={`${speaker.name}-${index}`} className="rounded-[28px] border border-black/5 bg-white/70 p-5 dark:border-white/10 dark:bg-white/5">
+                          <div className="font-semibold">{speaker.name}</div>
+                          <div className="mt-3 text-xs uppercase tracking-[0.18em] text-accent">Stated Goal</div>
+                          <p className="mt-1 text-sm text-ink/75 dark:text-ink/70">{speaker.stated_goal}</p>
+                          <div className="mt-4 text-xs uppercase tracking-[0.18em] text-accent">Likely Intent</div>
+                          <p className="mt-1 text-sm text-ink/75 dark:text-ink/70">{speaker.likely_intent}</p>
+                          <div className="mt-4 text-xs uppercase tracking-[0.18em] text-accent">Hidden Concern</div>
+                          <p className="mt-1 text-sm text-ink/75 dark:text-ink/70">{speaker.hidden_concern}</p>
                         </div>
                       ))}
                     </div>
@@ -597,6 +676,53 @@ function DistributionCard({
             </div>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function NarrativeCard({ title, body }: { title: string; body: string }) {
+  return (
+    <section className="rounded-[28px] border border-black/5 bg-white/60 p-5 dark:border-white/10 dark:bg-white/5">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <p className="mt-4 text-sm leading-7 text-ink/75 dark:text-ink/70">{body}</p>
+    </section>
+  );
+}
+
+function IntentDriversCard({
+  concerns,
+  drivers
+}: {
+  concerns: string[];
+  drivers: string[];
+}) {
+  return (
+    <section className="rounded-[28px] border border-black/5 bg-white/60 p-5 dark:border-white/10 dark:bg-white/5">
+      <h2 className="text-xl font-semibold">What Is Driving The Conversation</h2>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <div className="text-xs uppercase tracking-[0.18em] text-accent">Hidden Concerns</div>
+          <ul className="mt-3 space-y-3 text-sm text-ink/75 dark:text-ink/70">
+            {concerns.map((item, index) => (
+              <li key={`${item}-${index}`} className="flex gap-3">
+                <span className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <div className="text-xs uppercase tracking-[0.18em] text-accent">Decision Drivers</div>
+          <ul className="mt-3 space-y-3 text-sm text-ink/75 dark:text-ink/70">
+            {drivers.map((item, index) => (
+              <li key={`${item}-${index}`} className="flex gap-3">
+                <span className="mt-2 h-2 w-2 rounded-full bg-cyan-500" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );
