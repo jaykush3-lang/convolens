@@ -35,15 +35,18 @@ const highlights = [
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen overflow-hidden px-4 py-6 sm:px-6 lg:px-8">
+    <main className="relative min-h-screen overflow-hidden px-4 py-6 sm:px-6 lg:px-8">
+      <div className="ambient-orb ambient-orb--teal left-[-2rem] top-20 h-48 w-48" />
+      <div className="ambient-orb ambient-orb--gold right-10 top-28 h-56 w-56" />
+      <div className="ambient-orb ambient-orb--blue bottom-10 right-1/3 h-64 w-64" />
       <div className="mx-auto flex max-w-7xl flex-col gap-14">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-full border border-black/5 bg-white/70 px-5 py-3 backdrop-blur dark:border-white/10 dark:bg-white/5">
+        <header className="fade-rise premium-surface flex flex-wrap items-center justify-between gap-3 rounded-full border border-black/5 bg-white/70 px-5 py-3 backdrop-blur dark:border-white/10 dark:bg-white/5">
           <Brand compact />
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link
               href="/app"
-              className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+              className="aurora-button inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition hover:opacity-95"
             >
               Open app
               <ArrowRight className="h-4 w-4" />
@@ -52,7 +55,7 @@ export default function LandingPage() {
         </header>
 
         <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div className="space-y-8">
+          <div className="fade-rise-delay space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accentSoft px-4 py-2 text-sm font-medium text-accent dark:border-accent/30 dark:bg-accentSoft/40">
               <Globe2 className="h-4 w-4" />
               AI-powered conversation intelligence
@@ -67,7 +70,7 @@ export default function LandingPage() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {highlights.map((highlight) => (
-                <div key={highlight} className="rounded-2xl border border-black/5 bg-white/60 px-4 py-3 text-sm font-medium dark:border-white/10 dark:bg-white/5">
+                <div key={highlight} className="chromatic-card premium-surface rounded-2xl border border-black/5 px-4 py-3 text-sm font-medium dark:border-white/10">
                   {highlight}
                 </div>
               ))}
@@ -75,7 +78,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 href="/app"
-                className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-base font-semibold text-white shadow-glow transition hover:translate-y-[-1px]"
+                className="aurora-button inline-flex items-center gap-2 rounded-full px-6 py-3 text-base font-semibold text-white shadow-glow transition hover:translate-y-[-1px]"
               >
                 Launch dashboard
                 <ArrowRight className="h-4 w-4" />
@@ -100,7 +103,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-[32px] border border-black/5 bg-panel p-6 shadow-glow dark:border-white/10">
+          <div className="fade-rise chromatic-card premium-surface relative overflow-hidden rounded-[32px] border border-black/5 bg-panel p-6 shadow-glow dark:border-white/10">
             <div className="absolute inset-0 -z-10 rounded-[32px] bg-grid bg-[size:36px_36px] opacity-30" />
             <div className="space-y-5">
               <div className="rounded-3xl bg-panelStrong p-5 dark:bg-white/5">
@@ -131,7 +134,7 @@ export default function LandingPage() {
                         </div>
                         <div className="h-2 rounded-full bg-black/5 dark:bg-white/10">
                           <div
-                            className="h-2 rounded-full bg-accent"
+                            className="h-2 rounded-full bg-[linear-gradient(90deg,rgb(var(--accent)),rgb(var(--accent-tertiary)))]"
                             style={{ width: share }}
                           />
                         </div>

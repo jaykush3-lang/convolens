@@ -7,6 +7,8 @@
   --ink: 18 23 28;
   --accent: 19 91 84;
   --accent-soft: 214 235 231;
+  --accent-secondary: 242 165 76;
+  --accent-tertiary: 71 124 240;
   --panel: 255 255 255;
   --panel-strong: 241 236 227;
 }
@@ -16,6 +18,8 @@
   --ink: 239 244 246;
   --accent: 99 204 192;
   --accent-soft: 28 56 61;
+  --accent-secondary: 247 192 97;
+  --accent-tertiary: 121 165 255;
   --panel: 20 28 35;
   --panel-strong: 30 39 47;
 }
@@ -28,9 +32,11 @@ body {
   font-family: var(--font-body), sans-serif;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(71, 147, 136, 0.25), transparent 30%),
-    radial-gradient(circle at right center, rgba(214, 162, 72, 0.16), transparent 24%),
+    radial-gradient(circle at top left, rgba(71, 147, 136, 0.3), transparent 30%),
+    radial-gradient(circle at right center, rgba(214, 162, 72, 0.2), transparent 24%),
+    radial-gradient(circle at 80% 18%, rgba(71, 124, 240, 0.16), transparent 18%),
     rgb(var(--canvas));
+  color: rgb(var(--ink));
 }
 
 h1,
@@ -42,5 +48,133 @@ h4 {
 
 ::selection {
   background: rgba(19, 91, 84, 0.22);
+}
+
+a,
+button,
+input,
+textarea {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease;
+}
+
+button:hover,
+a:hover {
+  transform: translateY(-1px);
+}
+
+.premium-surface {
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0));
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.chromatic-card {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.6)),
+    radial-gradient(circle at top right, rgba(242, 165, 76, 0.16), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(71, 124, 240, 0.14), transparent 32%);
+}
+
+.dark .chromatic-card {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.02)),
+    radial-gradient(circle at top right, rgba(247, 192, 97, 0.15), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(121, 165, 255, 0.14), transparent 32%);
+}
+
+.aurora-button {
+  background-image: linear-gradient(135deg, rgb(var(--accent)), rgb(var(--accent-secondary)));
+  box-shadow: 0 18px 35px rgba(19, 91, 84, 0.22);
+}
+
+.dark .aurora-button {
+  box-shadow: 0 18px 35px rgba(11, 23, 32, 0.45);
+}
+
+.focus-ring-luxe:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(71, 124, 240, 0.18),
+    0 0 0 6px rgba(99, 204, 192, 0.14);
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(18px);
+  opacity: 0.55;
+  animation: float-orb 11s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ambient-orb--teal {
+  background: rgba(69, 205, 191, 0.32);
+}
+
+.ambient-orb--gold {
+  background: rgba(242, 165, 76, 0.28);
+  animation-delay: -3s;
+}
+
+.ambient-orb--blue {
+  background: rgba(71, 124, 240, 0.22);
+  animation-delay: -6s;
+}
+
+.fade-rise {
+  animation: fade-rise 700ms ease both;
+}
+
+.fade-rise-delay {
+  animation: fade-rise 900ms ease both;
+}
+
+.pulse-border {
+  animation: pulse-border 2.8s ease-in-out infinite;
+}
+
+@keyframes fade-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float-orb {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) scale(1.06);
+  }
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(71, 124, 240, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(71, 124, 240, 0);
+  }
 }
 

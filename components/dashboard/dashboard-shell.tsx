@@ -153,9 +153,17 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
   };
 
   return (
-    <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
+    <main className="relative min-h-screen overflow-hidden px-4 py-6 sm:px-6 lg:px-8">
+      <div className="ambient-orb ambient-orb--teal left-[-3rem] top-24 h-48 w-48" />
+      <div className="ambient-orb ambient-orb--gold right-[-2rem] top-16 h-56 w-56" />
+      <div className="ambient-orb ambient-orb--blue bottom-20 right-1/4 h-64 w-64" />
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="rounded-[28px] border border-black/5 bg-panel/95 p-5 shadow-glow dark:border-white/10">
+        <motion.header
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="chromatic-card premium-surface rounded-[28px] border border-black/5 bg-panel/95 p-5 shadow-glow dark:border-white/10"
+        >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <Brand />
@@ -169,26 +177,31 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                 <button
                   type="button"
                   onClick={() => exportAnalysisPdf(result)}
-                  className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white"
+                  className="aurora-button inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white"
                 >
                   <Sparkles className="h-4 w-4" />
                   Export PDF
                 </button>
               ) : null}
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="inline-flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-semibold dark:border-white/10"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign out
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/55 px-4 py-2 text-sm font-semibold dark:border-white/10 dark:bg-white/5"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
               </button>
             </div>
           </div>
-        </header>
+        </motion.header>
 
         <section className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <div className="space-y-5 rounded-[28px] border border-black/5 bg-panel/95 p-4 sm:p-5 dark:border-white/10">
+          <motion.div
+            initial={{ opacity: 0, x: -14 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, delay: 0.05 }}
+            className="chromatic-card premium-surface space-y-5 rounded-[28px] border border-black/5 bg-panel/95 p-4 sm:p-5 dark:border-white/10"
+          >
             <div className="flex rounded-full bg-panelStrong p-1 dark:bg-white/5">
               {([
                 ["text", "Text/Chat"],
@@ -201,7 +214,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                   onClick={() => setActiveTab(key)}
                   className={cn(
                     "flex-1 rounded-full px-3 py-2 text-sm font-semibold transition",
-                    activeTab === key ? "bg-accent text-white" : "text-ink/65"
+                    activeTab === key ? "aurora-button text-white" : "text-ink/65"
                   )}
                 >
                   {label}
@@ -287,7 +300,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                   type="button"
                   onClick={handleAnalyzeText}
                   disabled={!conversationText.trim() || analyzeMutation.isPending}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                  className="aurora-button inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {analyzeMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                   Analyze
@@ -347,7 +360,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                   type="button"
                   onClick={handleAnalyzeText}
                   disabled={!transcriptText.trim() || analyzeMutation.isPending || transcribeMutation.isPending}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                  className="aurora-button inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {transcribeMutation.isPending || analyzeMutation.isPending ? (
                     <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -412,9 +425,14 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
             ) : null}
 
             {actionError ? <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-200">{actionError}</p> : null}
-          </div>
+          </motion.div>
 
-          <section className="rounded-[28px] border border-black/5 bg-panel/95 p-4 sm:p-5 dark:border-white/10">
+          <motion.section
+            initial={{ opacity: 0, x: 14 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, delay: 0.1 }}
+            className="chromatic-card premium-surface rounded-[28px] border border-black/5 bg-panel/95 p-4 sm:p-5 dark:border-white/10"
+          >
             <AnimatePresence mode="wait">
               {result ? (
                 <motion.div
@@ -551,7 +569,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                 </motion.div>
               )}
             </AnimatePresence>
-          </section>
+          </motion.section>
         </section>
       </div>
     </main>

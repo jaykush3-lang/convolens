@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
+import { CursorGlow } from "@/components/ui/cursor-glow";
 
 const bodyFont = DM_Sans({ subsets: ["latin"], variable: "--font-body" });
 const displayFont = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
@@ -18,7 +19,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${bodyFont.variable} ${displayFont.variable} bg-canvas text-ink antialiased`}>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <CursorGlow />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );
