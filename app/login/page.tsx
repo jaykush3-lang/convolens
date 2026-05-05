@@ -14,6 +14,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [googleEnabled, setGoogleEnabled] = useState<boolean | null>(null);
+  const [emailAutoConfirm, setEmailAutoConfirm] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +27,41 @@ export default function LoginPage() {
     }
   }, []);
 
+  useEffect(() => {
+    const loadAuthSettings = async () => {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !anonKey) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+          headers: { apikey: anonKey }
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const settings = await response.json();
+        setGoogleEnabled(Boolean(settings?.external?.google));
+        setEmailAutoConfirm(Boolean(settings?.mailer_autoconfirm));
+      } catch {
+        setGoogleEnabled(false);
+      }
+    };
+
+    void loadAuthSettings();
+  }, []);
+
   const handleEmailAuth = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
     setMessage(null);
+    const normalizedEmail = email.trim().toLowerCase();
 
     const supabase = createBrowserSupabaseClient();
 
@@ -41,9 +73,9 @@ export default function LoginPage() {
 
     const action =
       mode === "signin"
-        ? supabase.auth.signInWithPassword({ email, password })
+        ? supabase.auth.signInWithPassword({ email: normalizedEmail, password })
         : supabase.auth.signUp({
-            email,
+            email: normalizedEmail,
             password,
             options: {
               emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
@@ -54,12 +86,20 @@ export default function LoginPage() {
     setLoading(false);
 
     if (authError) {
-      setError(authError.message);
+      if (authError.message.toLowerCase().includes("invalid login credentials")) {
+        setError("Invalid login. First create an account with this email, then verify it from your inbox before signing in.");
+      } else {
+        setError(authError.message);
+      }
       return;
     }
 
     if (mode === "signup") {
-      setMessage("Account created. Check your email if confirmation is enabled, then sign in.");
+      setMessage(
+        emailAutoConfirm
+          ? "Account created. You can sign in now."
+          : "Account created. Check your email inbox and verify the account first, then sign in."
+      );
       return;
     }
 
@@ -76,6 +116,11 @@ export default function LoginPage() {
   };
 
   const handleGoogleAuth = async () => {
+    if (googleEnabled === false) {
+      setError("Google sign-in is not enabled in Supabase yet. Turn it on in Authentication > Sign In / Providers.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     const supabase = createBrowserSupabaseClient();
@@ -130,6 +175,9 @@ export default function LoginPage() {
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Sign in to ConvoLens</h1>
               <p className="max-w-xl text-base leading-7 text-ink/75 dark:text-ink/70">
                 Save analysis history, upload audio safely, and bring every transcript back when you need it.
+              </p>
+              <p className="max-w-xl text-sm leading-7 text-ink/60 dark:text-ink/65">
+                Current setup: email login works after account creation and email verification. Google sign-in appears only when the provider is enabled in Supabase.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -218,11 +266,11 @@ export default function LoginPage() {
 
             <button
               type="button"
-              disabled={loading}
+              disabled={loading || googleEnabled === false}
               onClick={handleGoogleAuth}
               className="inline-flex w-full items-center justify-center rounded-2xl border border-black/10 px-4 py-3 font-semibold transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/10 dark:hover:bg-white/5"
             >
-              Continue with Google
+              {googleEnabled === false ? "Google sign-in not enabled yet" : "Continue with Google"}
             </button>
 
             {message ? <p className="mt-4 text-sm text-accent">{message}</p> : null}
