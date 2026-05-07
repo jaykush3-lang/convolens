@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import { AUDIO_ACCEPT, IMAGE_ACCEPT, SAMPLE_CONVERSATION, SAMPLE_TEMPLATES } from "@/lib/constants";
+import { AUDIO_ACCEPT, IMAGE_ACCEPT, MAX_SCREENSHOT_UPLOADS, SAMPLE_CONVERSATION, SAMPLE_TEMPLATES } from "@/lib/constants";
 import { exportAnalysisPdf } from "@/lib/pdf";
 import { HistoryItem, AnalysisResult } from "@/lib/types";
 import { Brand } from "@/components/ui/brand";
@@ -140,8 +140,12 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
     const screenshotFiles = files ? Array.from(files) : [];
     if (!screenshotFiles.length) return;
 
+    const totalAfterAdd = selectedImageNames.length + screenshotFiles.length;
+    if (totalAfterAdd > MAX_SCREENSHOT_UPLOADS) {
+      throw new Error(`You can upload up to ${MAX_SCREENSHOT_UPLOADS} screenshots at a time. Remove or clear older screenshots first.`);
+    }
+
     setOcrLoading(true);
-    setSelectedImageNames(screenshotFiles.map((file) => file.name));
     try {
       const { recognize } = await import("tesseract.js");
       const extractedChunks: string[] = [];
@@ -160,6 +164,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
       }
 
       const mergedText = extractedChunks.join("\n\n");
+      setSelectedImageNames((current) => [...current, ...screenshotFiles.map((file) => file.name)]);
       setConversationText((current) => (current ? `${current}\n\n${mergedText}` : mergedText));
       setActiveTab("text");
     } finally {
@@ -250,17 +255,21 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                     <div>
                       <div className="text-sm font-semibold">Analyze Chat Screenshot</div>
                       <div className="mt-1 text-xs text-ink/60 dark:text-ink/65">
-                        Upload one or more screenshots of WhatsApp, chat, notes, or meeting images. ConvoLens will merge extracted text into the editor with English + Hindi OCR support.
+                        Upload up to {MAX_SCREENSHOT_UPLOADS} screenshots at once or add them one by one. ConvoLens will merge extracted text into the editor with English + Hindi OCR support.
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => imageInputRef.current?.click()}
-                      disabled={ocrLoading}
+                      disabled={ocrLoading || selectedImageNames.length >= MAX_SCREENSHOT_UPLOADS}
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-semibold transition hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
                     >
                       {ocrLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ImageUp className="h-4 w-4" />}
-                      {ocrLoading ? "Reading screenshots" : "Upload Screenshots"}
+                      {ocrLoading
+                        ? "Reading screenshots"
+                        : selectedImageNames.length >= MAX_SCREENSHOT_UPLOADS
+                          ? "Screenshot limit reached"
+                          : "Upload Screenshots"}
                     </button>
                   </div>
                   <input
@@ -282,8 +291,17 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                     }}
                   />
                   {selectedImageNames.length ? (
-                    <div className="mt-3 text-xs text-ink/60 dark:text-ink/65">
-                      Screenshots loaded: {selectedImageNames.join(", ")}
+                    <div className="mt-3 space-y-2 text-xs text-ink/60 dark:text-ink/65">
+                      <div>
+                        Screenshots loaded ({selectedImageNames.length}/{MAX_SCREENSHOT_UPLOADS}): {selectedImageNames.join(", ")}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedImageNames([])}
+                        className="font-semibold text-accent"
+                      >
+                        Clear screenshot list
+                      </button>
                     </div>
                   ) : null}
                 </div>

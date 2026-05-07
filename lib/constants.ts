@@ -89,5 +89,6 @@ JSON structure:
 
 export const AUDIO_ACCEPT = ".mp3,.wav,.m4a,.ogg,.webm";
 export const IMAGE_ACCEPT = "image/png,image/jpeg,image/webp";
+export const MAX_SCREENSHOT_UPLOADS = 4;
 export const MAX_DAILY_ANALYSES = 20;
 
