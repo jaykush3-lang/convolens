@@ -11,6 +11,9 @@ export const analysisSchema = z.object({
   notable_quotes: z.array(z.string()),
   next_steps: z.string(),
   intent_summary: z.string(),
+  speaker_count: z.number().int().nonnegative(),
+  conversation_clarity: z.string(),
+  communication_improvements: z.array(z.string()),
   hidden_concerns: z.array(z.string()),
   decision_drivers: z.array(z.string()),
   speakers: z.array(

@@ -65,6 +65,9 @@ JSON structure:
   "notable_quotes": ["exact quote 1", "exact quote 2", "exact quote 3"],
   "next_steps": "Concrete 2-3 sentence recommendation on what should happen next",
   "intent_summary": "2-3 sentence explanation of what the speakers actually want beneath the surface",
+  "speaker_count": <integer>,
+  "conversation_clarity": "2-3 sentence explanation of whether the conversation is clear, mixed, or confusing and why",
+  "communication_improvements": ["improvement 1", "improvement 2", "improvement 3"],
   "hidden_concerns": ["concern 1", "concern 2", "concern 3"],
   "decision_drivers": ["driver 1", "driver 2", "driver 3"],
   "speakers": [

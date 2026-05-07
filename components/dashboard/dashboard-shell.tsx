@@ -488,7 +488,7 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                     {[
                       ["Sentiment Score", `${result.sentiment_score}/100`],
                       ["Tone", overallTone],
-                      ["Action Items", String(result.action_items.length)],
+                      ["People Talking", String(result.speaker_count || result.speakers.length)],
                       ["Conversation Type", result.conversation_type]
                     ].map(([label, value]) => (
                       <div key={label} className="rounded-3xl bg-panelStrong p-4 dark:bg-white/5">
@@ -527,6 +527,11 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                       concerns={result.hidden_concerns}
                       drivers={result.decision_drivers}
                     />
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <NarrativeCard title="Conversation Clarity" body={result.conversation_clarity} />
+                    <InfoList title="Communication Improvements" items={result.communication_improvements} accent="good" />
                   </div>
 
                   <div className="grid gap-4 lg:grid-cols-2">

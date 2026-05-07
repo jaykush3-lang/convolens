@@ -52,6 +52,9 @@ export interface AnalysisResult {
   notable_quotes: string[];
   next_steps: string;
   intent_summary: string;
+  speaker_count: number;
+  conversation_clarity: string;
+  communication_improvements: string[];
   hidden_concerns: string[];
   decision_drivers: string[];
   speakers: SpeakerAnalysis[];

@@ -58,6 +58,31 @@ function splitLines(text: string) {
     .filter(Boolean);
 }
 
+function splitSentences(text: string) {
+  return text
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function cleanSpeakerName(name: string) {
+  return name
+    .replace(/^screenshot\s*:\s*/i, "")
+    .replace(/[|()[\]{}]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 32);
+}
+
+function isLikelySpeakerName(value: string) {
+  const cleaned = cleanSpeakerName(value);
+  if (!cleaned) return false;
+  if (cleaned.length > 28) return false;
+  if (/^\d+$/.test(cleaned)) return false;
+  if (/\b(message|screenshot|image|chat|conversation)\b/i.test(cleaned)) return false;
+  return /^[A-Za-z][A-Za-z0-9 ._-]{0,27}$/.test(cleaned);
+}
+
 function normalizeWord(word: string) {
   return word.toLowerCase().replace(/[^a-z0-9']/g, "");
 }
@@ -72,6 +97,50 @@ function pickTone(line: string): ToneLabel {
   if (/(wrong|however|but|no|nahi|galat|aisa nahi)/.test(lower)) return "Defensive";
 
   return "Neutral";
+}
+
+function parseConversationTurns(text: string) {
+  const lines = splitLines(text);
+  const turns: Array<{ speaker: string; content: string }> = [];
+
+  for (const line of lines) {
+    const directMatch = line.match(/^([^:\n]{1,32})\s*:\s*(.+)$/);
+    if (directMatch && isLikelySpeakerName(directMatch[1])) {
+      turns.push({
+        speaker: cleanSpeakerName(directMatch[1]),
+        content: directMatch[2].trim()
+      });
+      continue;
+    }
+
+    const dashMatch = line.match(/^([^-\n]{1,32})\s*-\s*(.+)$/);
+    if (dashMatch && isLikelySpeakerName(dashMatch[1])) {
+      turns.push({
+        speaker: cleanSpeakerName(dashMatch[1]),
+        content: dashMatch[2].trim()
+      });
+      continue;
+    }
+  }
+
+  if (turns.length >= 2) {
+    return turns;
+  }
+
+  const sentences = splitSentences(text);
+  const inferredTurns: Array<{ speaker: string; content: string }> = [];
+  let speakerIndex = 0;
+
+  for (const sentence of sentences) {
+    if (sentence.length < 8) continue;
+    inferredTurns.push({
+      speaker: speakerIndex % 2 === 0 ? "Speaker A" : "Speaker B",
+      content: sentence
+    });
+    speakerIndex += 1;
+  }
+
+  return inferredTurns.length ? inferredTurns : [{ speaker: "Speaker A", content: text.trim() }];
 }
 
 function inferConversationType(text: string): ConversationType {
@@ -104,13 +173,12 @@ function inferEmotionTags(text: string, positives: number, negatives: number): E
   return unique(tags).slice(0, 4).length ? unique(tags).slice(0, 4) : ["Productive"];
 }
 
-function buildSpeakerBreakdown(lines: string[]): SpeakerAnalysis[] {
+function buildSpeakerBreakdown(turns: Array<{ speaker: string; content: string }>): SpeakerAnalysis[] {
   const speakerMap = new Map<string, { count: number; lines: string[] }>();
 
-  for (const line of lines) {
-    const match = line.match(/^([^:]{1,40}):\s*(.+)$/);
-    const name = match?.[1]?.trim() || "Speaker A";
-    const content = match?.[2]?.trim() || line;
+  for (const turn of turns) {
+    const name = turn.speaker || "Speaker A";
+    const content = turn.content || "";
     const current = speakerMap.get(name) ?? { count: 0, lines: [] };
     current.count += 1;
     current.lines.push(content);
@@ -174,6 +242,55 @@ function actionItemsFromLines(lines: string[]) {
   ).slice(0, 4);
 }
 
+function inferConversationClarity(text: string, speakers: SpeakerAnalysis[], actionItems: string[]) {
+  const lower = text.toLowerCase();
+  const confusionSignals = [
+    "confusion",
+    "unclear",
+    "samajh nahi",
+    "clear nahi",
+    "not clear",
+    "issue",
+    "problem"
+  ].filter((signal) => lower.includes(signal)).length;
+  const structureSignals = actionItems.length + (speakers.length > 1 ? 1 : 0) + (/(next|review|done|share|send|karna hai|theek hai)/.test(lower) ? 1 : 0);
+
+  if (structureSignals >= 3 && confusionSignals === 0) {
+    return "The conversation is fairly clear. Multiple speakers are identifiable, ownership is visible, and the discussion moves toward specific next steps.";
+  }
+
+  if (confusionSignals >= 2) {
+    return "The conversation has mixed clarity. The main topic can be understood, but parts of the language suggest confusion, missing context, or weak structure between speakers.";
+  }
+
+  return "The conversation is understandable but could be clearer. Some intent and next steps are visible, though the structure would improve with more explicit speaker turns and decisions.";
+}
+
+function inferCommunicationImprovements(text: string, speakers: SpeakerAnalysis[], actionItems: string[]) {
+  const lower = text.toLowerCase();
+  const improvements: string[] = [];
+
+  if (speakers.some((speaker) => /^Speaker [A-Z]$/.test(speaker.name))) {
+    improvements.push("Label speakers more clearly so the analysis can identify who is talking without guessing.");
+  }
+  if (/(confusion|unclear|samajh nahi|clear nahi)/.test(lower)) {
+    improvements.push("Clarify the unclear part directly and restate the decision in simple language.");
+  }
+  if (actionItems.length < 2) {
+    improvements.push("Add explicit action items with owner and timing so the conversation ends with clear next steps.");
+  }
+  if (!/(today|tomorrow|monday|tuesday|week|kal|aaj|deadline)/.test(lower)) {
+    improvements.push("Mention timing or deadlines so the follow-up feels more concrete.");
+  }
+  if (!/(because|reason|metric|data|kyunki|isliye|lag raha)/.test(lower)) {
+    improvements.push("Explain the reasoning behind requests so intent and decision drivers are easier to understand.");
+  }
+
+  return unique(improvements).slice(0, 4).length
+    ? unique(improvements).slice(0, 4)
+    : ["Keep speaker labels, decisions, and next steps explicit so the conversation stays easy to follow."];
+}
+
 function inferIntentSummary(text: string, conversationType: ConversationType) {
   const lower = text.toLowerCase();
 
@@ -218,10 +335,10 @@ function inferDecisionDrivers(text: string) {
   return drivers.length ? unique(drivers).slice(0, 4) : ["Momentum, alignment, and practical next steps."];
 }
 
-function inferSpeakerIntentions(lines: string[], speakers: SpeakerAnalysis[]): SpeakerIntentInsight[] {
+function inferSpeakerIntentions(turns: Array<{ speaker: string; content: string }>, speakers: SpeakerAnalysis[]): SpeakerIntentInsight[] {
   return speakers.map((speaker) => {
-    const relevant = lines.filter((line) => line.toLowerCase().startsWith(`${speaker.name.toLowerCase()}:`));
-    const joined = relevant.join(" ").toLowerCase();
+    const relevant = turns.filter((turn) => turn.speaker.toLowerCase() === speaker.name.toLowerCase());
+    const joined = relevant.map((turn) => turn.content).join(" ").toLowerCase();
 
     const statedGoal =
       /(will|i'll|i will|main|bhej|draft|prepare|review|share|ready)/.test(joined)
@@ -259,15 +376,18 @@ function inferSpeakerIntentions(lines: string[], speakers: SpeakerAnalysis[]): S
 
 export function generateFreeAnalysis(text: string): AnalysisResult {
   const lines = splitLines(text);
+  const turns = parseConversationTurns(text);
   const lower = text.toLowerCase();
   const positiveHits = POSITIVE_WORDS.filter((word) => lower.includes(word)).length;
   const negativeHits = NEGATIVE_WORDS.filter((word) => lower.includes(word)).length;
   const sentimentScore = Math.max(10, Math.min(95, 60 + positiveHits * 6 - negativeHits * 7));
   const sentimentLabel = sentimentScore >= 67 ? "Positive" : sentimentScore <= 44 ? "Negative" : "Neutral";
-  const speakers = buildSpeakerBreakdown(lines);
+  const speakers = buildSpeakerBreakdown(turns);
   const actionItems = actionItemsFromLines(lines);
   const topics = topTopics(text);
   const conversationType = inferConversationType(text);
+  const conversationClarity = inferConversationClarity(text, speakers, actionItems);
+  const communicationImprovements = inferCommunicationImprovements(text, speakers, actionItems);
   const positiveLines = unique(
     lines.filter((line) => /(agree|thanks|done|perfect|support|clear|review|accha|sahi|badhiya|theek hai)/i.test(line)).slice(0, 3)
   );
@@ -276,22 +396,25 @@ export function generateFreeAnalysis(text: string): AnalysisResult {
   );
 
   return {
-    summary: `This conversation was analyzed in ConvoLens free mode using local English plus Hindi/Hinglish heuristics instead of a paid AI API. The discussion focused on ${topics.slice(0, 3).join(", ") || "the main topic at hand"}. The overall tone appears ${sentimentLabel.toLowerCase()}, with ${actionItems.length} action-oriented moments identified. ${speakers.length ? `${speakers[0].name} was one of the main contributors.` : "Multiple participants contributed to the exchange."} Use a paid AI model later if you want deeper nuance.`,
+    summary: `This conversation was analyzed in ConvoLens free mode using local English plus Hindi/Hinglish heuristics instead of a paid AI API. The discussion focused on ${topics.slice(0, 3).join(", ") || "the main topic at hand"}. The overall tone appears ${sentimentLabel.toLowerCase()}, with ${actionItems.length} action-oriented moments identified. ${speakers.length ? `${speakers.length} distinct speaker${speakers.length > 1 ? "s were" : " was"} detected, and ${speakers[0].name} appears as a main contributor.` : "Multiple participants contributed to the exchange."} ${conversationClarity}`,
     sentiment_score: sentimentScore,
     sentiment_label: sentimentLabel,
     positives: positiveLines.length ? positiveLines : ["The discussion contains collaborative or forward-moving moments."],
     negatives: negativeLines.length ? negativeLines : ["No major negative signals were strongly detected in free mode."],
     key_topics: topics.length ? topics : ["conversation", "discussion", "next steps", "team", "analysis"],
     action_items: actionItems.length ? actionItems : ["Review the conversation and define the next owner manually."],
-    notable_quotes: lines.slice(0, 3).map((line) => line.replace(/^([^:]{1,40}):\s*/, "")),
+    notable_quotes: turns.slice(0, 3).map((turn) => turn.content),
     next_steps: "Review the generated action items and confirm the main decisions manually. If you want higher-quality summaries and speaker nuance later, reconnect a paid AI provider.",
     intent_summary: inferIntentSummary(text, conversationType),
+    speaker_count: speakers.length,
+    conversation_clarity: conversationClarity,
+    communication_improvements: communicationImprovements,
     hidden_concerns: inferHiddenConcerns(text),
     decision_drivers: inferDecisionDrivers(text),
     speakers: speakers.length
       ? speakers
       : [{ name: "Speaker A", message_count: lines.length || 1, tone: "Neutral", key_contribution: "Shared the main points of the conversation." }],
-    speaker_intentions: inferSpeakerIntentions(lines, speakers.length ? speakers : [{ name: "Speaker A", message_count: lines.length || 1, tone: "Neutral", key_contribution: "Shared the main points of the conversation." }]),
+    speaker_intentions: inferSpeakerIntentions(turns, speakers.length ? speakers : [{ name: "Speaker A", message_count: lines.length || 1, tone: "Neutral", key_contribution: "Shared the main points of the conversation." }]),
     emotion_tags: inferEmotionTags(text, positiveHits, negativeHits),
     conversation_type: conversationType
   };
