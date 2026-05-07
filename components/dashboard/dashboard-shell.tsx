@@ -44,9 +44,10 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
   const [conversationText, setConversationText] = useState("");
   const [transcriptText, setTranscriptText] = useState("");
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
-  const [selectedImageName, setSelectedImageName] = useState<string | null>(null);
+  const [selectedImageNames, setSelectedImageNames] = useState<string[]>([]);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
 
   const historyQuery = useQuery({
     queryKey: ["history"],
@@ -135,21 +136,35 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
     await transcribeMutation.mutateAsync(file);
   };
 
-  const handleScreenshot = async (file?: File) => {
-    if (!file) return;
+  const handleScreenshots = async (files?: FileList | File[]) => {
+    const screenshotFiles = files ? Array.from(files) : [];
+    if (!screenshotFiles.length) return;
 
-    setSelectedImageName(file.name);
+    setOcrLoading(true);
+    setSelectedImageNames(screenshotFiles.map((file) => file.name));
+    try {
+      const { recognize } = await import("tesseract.js");
+      const extractedChunks: string[] = [];
 
-    const { recognize } = await import("tesseract.js");
-    const ocrResult = await recognize(file, "eng+hin");
-    const extracted = ocrResult.data.text.trim();
+      for (const file of screenshotFiles) {
+        const ocrResult = await recognize(file, "eng+hin");
+        const extracted = ocrResult.data.text.trim();
 
-    if (!extracted) {
-      throw new Error("No readable text was found in the screenshot. Try a clearer image.");
+        if (extracted) {
+          extractedChunks.push(`Screenshot: ${file.name}\n${extracted}`);
+        }
+      }
+
+      if (!extractedChunks.length) {
+        throw new Error("No readable text was found in these screenshots. Try clearer images.");
+      }
+
+      const mergedText = extractedChunks.join("\n\n");
+      setConversationText((current) => (current ? `${current}\n\n${mergedText}` : mergedText));
+      setActiveTab("text");
+    } finally {
+      setOcrLoading(false);
     }
-
-    setConversationText((current) => (current ? `${current}\n\n${extracted}` : extracted));
-    setActiveTab("text");
   };
 
   return (
@@ -235,34 +250,42 @@ export function DashboardShell({ userEmail }: { userEmail: string }) {
                     <div>
                       <div className="text-sm font-semibold">Analyze Chat Screenshot</div>
                       <div className="mt-1 text-xs text-ink/60 dark:text-ink/65">
-                        Upload a screenshot of WhatsApp, chat, notes, or a meeting image. ConvoLens will extract text into the editor with English + Hindi OCR support.
+                        Upload one or more screenshots of WhatsApp, chat, notes, or meeting images. ConvoLens will merge extracted text into the editor with English + Hindi OCR support.
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => imageInputRef.current?.click()}
+                      disabled={ocrLoading}
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-black/10 px-4 py-2 text-sm font-semibold transition hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
                     >
-                      <ImageUp className="h-4 w-4" />
-                      Upload Screenshot
+                      {ocrLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ImageUp className="h-4 w-4" />}
+                      {ocrLoading ? "Reading screenshots" : "Upload Screenshots"}
                     </button>
                   </div>
                   <input
                     ref={imageInputRef}
                     type="file"
+                    multiple
                     accept={IMAGE_ACCEPT}
                     className="hidden"
                     onChange={async (event) => {
-                      const file = event.target.files?.[0];
-                      if (!file) return;
+                      const files = event.target.files;
+                      if (!files?.length) return;
                       try {
-                        await handleScreenshot(file);
+                        await handleScreenshots(files);
+                        event.target.value = "";
                       } catch (error) {
                         alert(error instanceof Error ? error.message : "Unable to read this screenshot.");
+                        event.target.value = "";
                       }
                     }}
                   />
-                  {selectedImageName ? <div className="mt-3 text-xs text-ink/60 dark:text-ink/65">Screenshot loaded: {selectedImageName}</div> : null}
+                  {selectedImageNames.length ? (
+                    <div className="mt-3 text-xs text-ink/60 dark:text-ink/65">
+                      Screenshots loaded: {selectedImageNames.join(", ")}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="space-y-3">
                   <div className="text-sm font-semibold text-ink/75 dark:text-ink/70">Quick Templates</div>
